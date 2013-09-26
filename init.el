@@ -139,10 +139,14 @@
 )
 
 ;;anything
-(when (require 'anything-startup))
+(when (require 'anything-startup)
+  (global-set-key (kbd "\C-x b") 'anything)
+)
 
 ;;scala-mode2
 (when (require 'scala-mode2)
   (add-to-list 'load-path "~/.emacs.d/elpa/ensime_2.10.0-0.9.8.9/elisp/")
   (when (require 'ensime) (add-hook 'scala-mode-hook 'ensime-scala-mode-hook)))
 
+;;magit
+(when (require 'magit))
