@@ -150,3 +150,13 @@
 
 ;;magit
 (when (require 'magit))
+
+(when (require 'direx)
+  (global-set-key (kbd "C-x C-j") 'direx:jump-to-directory-other-window)
+
+  (when (require 'popwin)
+    (setq display-buffer-function 'popwin:display-buffer)
+    (setq popwin:popup-window-position 'right)
+    (push '(direx:direx-mode :position right :width 25 :dedicated t) popwin:special-display-config)
+  )
+)
