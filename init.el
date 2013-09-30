@@ -1,5 +1,6 @@
-;;初期ディレクトリ
-(cd "~/")
+;;----------------------------------------------------------------
+;; 基本設定
+;;----------------------------------------------------------------
 
 ;;スタート画面いらない
 (setq inhibit-startup-screen t)
@@ -7,21 +8,9 @@
 ;;起動時にscratch表示
 (add-hook 'emacs-startup-hook '(lambda () (switch-to-buffer "*scratch*")))
 
-;;行番号表示
-(global-linum-mode t)
-
 ;;折り返しいらない
 (setq-default truncate-partial-width-windows t)
 (setq-default truncate-lines t)
-
-;;ツールバーいらない
-(tool-bar-mode 0)
-
-;;スクロールバーいらない
-(set-scroll-bar-mode nil)
-
-;;タイトル設定
-(setq frame-title-format "%f - Emacs")
 
 ;;とりあえずバックアップいらない
 (setq make-backup-files nil)
@@ -36,6 +25,29 @@
 
 ;;自動再読込み
 (global-auto-revert-mode 1)
+
+;;yes/no問い合わせを簡略化
+(fset 'yes-or-no-p 'y-or-n-p)
+
+;;----------------------------------------------------------------
+;; 外観設定
+;;----------------------------------------------------------------
+
+;;ツールバーいらない
+(tool-bar-mode 0)
+
+;;スクロールバーいらない
+(set-scroll-bar-mode nil)
+
+;;タイトル設定
+(setq frame-title-format "%f - Emacs")
+
+;;行番号表示
+(global-linum-mode t)
+
+;;行、列番号を表示
+(line-number-mode t)
+(column-number-mode t)
 
 ;;フォント設定
 (add-to-list 'default-frame-alist '(font . "-outline-Osaka－等幅-normal-normal-normal-mono-14-*-*-*-c-*-iso8859-1"))
@@ -53,11 +65,13 @@
 ;;括弧ハイライト
 (show-paren-mode 1)
 
-;;キーバインド関連
-;;isearch: F3: 前方検索
-(define-key isearch-mode-map [f3] 'isearch-repeat-forward)
+;;----------------------------------------------------------------
+;; キーバインド
+;;----------------------------------------------------------------
 
+;;isearch: F3: 前方検索
 ;;isearch: Shift-F3: 後方検索
+(define-key isearch-mode-map [f3] 'isearch-repeat-forward)
 (define-key isearch-mode-map [S-f3] 'isearch-repeat-backward)
 
 ;;分割ウィンドウ移動関連
@@ -67,18 +81,31 @@
 (global-set-key (kbd "M-<up>")    'windmove-up)
 (global-set-key (kbd "M-<down>")  'windmove-down)
 
+;;分割ウィンドウ移動
+;;分割されていない場合、横に割って移動を行う
+(defun other-window-or-split ()
+  (interactive)
+  (when (one-window-p)
+    (split-window-horizontally))
+  (other-window 1))
+(global-set-key (kbd "C-t") 'other-window-or-split)
+
 ;;Windows用の設定
-(cond
- ((string-match "win" system-configuration)
+(cond ((string-match "win" system-configuration)
   ;;IME設定
   ;;パッチの当たったemacsが必要
   (setq default-input-method "W32-IME")
   (setq-default w32-ime-mode-line-state-indicator "[--]")
   (setq w32-ime-mode-line-state-indicator-list '("[--]" "[あ]" "[--]"))
-  (w32-ime-initialize)
- )
-)
+  (w32-ime-initialize)))
 
+;;Alt+ホイールでフォントサイズ変更
+(global-set-key (kbd "M-<wheel-up>") 'text-scale-increase)
+(global-set-key (kbd "M-<wheel-down>") 'text-scale-decrease)
+
+;;----------------------------------------------------------------
+;; プラグイン設定
+;;----------------------------------------------------------------
 ;;package取得先追加
 (require 'package)
 (add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t)
@@ -86,7 +113,7 @@
 (package-initialize)
 
 ;;カラーテーマ設定
-(when (require 'monokai-theme))
+(when (locate-library "monokai-theme") (require 'monokai-theme))
 
 ;;全角スペース、タブ、改行を可視化
 (when (and (>= emacs-major-version 23) (require 'whitespace nil t))
@@ -106,9 +133,13 @@
   (global-whitespace-mode 1))
 
 ;;tabbar
-(when (require 'tabbar)
+(when (locate-library "tabbar") (require 'tabbar)
   (tabbar-mode)
   (tabbar-mwheel-mode nil)
+
+  (global-set-key (kbd "C-.") 'tabbar-forward-tab)
+  (global-set-key (kbd "C-,") 'tabbar-backward-tab)
+
   (dolist (btn '(tabbar-buffer-home-button
 		 tabbar-scroll-left-button
 		 tabbar-scroll-right-button))
@@ -135,28 +166,93 @@
 		      :box '(:line-width 1 :color "#232323" :style nil)
 		      :foreground "#FFFFFF"
 		      :family "Osaka－等幅"
-		      :height 1.0)
-)
+		      :height 1.0))
 
 ;;anything
-(when (require 'anything-startup)
+(when (locate-library "anything-startup") (require 'anything-startup)
   (global-set-key (kbd "\C-x b") 'anything)
-)
-
-;;scala-mode2
-(when (require 'scala-mode2)
-  (add-to-list 'load-path "~/.emacs.d/elpa/ensime_2.10.0-0.9.8.9/elisp/")
-  (when (require 'ensime) (add-hook 'scala-mode-hook 'ensime-scala-mode-hook)))
+  ;;C-x C-bはいらないのでキーバインド解除
+  (global-unset-key (kbd "C-x C-b")))
 
 ;;magit
-(when (require 'magit))
+(when (locate-library "magit") (require 'magit))
 
-(when (require 'direx)
+;;popwin
+(when (locate-library "popwin") (require 'popwin)
+  (setq display-buffer-function 'popwin:display-buffer)
+  (setq popwin:popup-window-position 'right))
+
+;;direx
+(when (locate-library "direx") (require 'direx)
   (global-set-key (kbd "C-x C-j") 'direx:jump-to-directory-other-window)
+  (push '(direx:direx-mode :position right :width 40 :dedicated t) popwin:special-display-config))
 
-  (when (require 'popwin)
-    (setq display-buffer-function 'popwin:display-buffer)
-    (setq popwin:popup-window-position 'right)
-    (push '(direx:direx-mode :position right :width 25 :dedicated t) popwin:special-display-config)
-  )
-)
+(when (locate-library "google-translate") (require 'google-translate)
+  ;;日本語から英語に翻訳を行う
+  (defun google-translate-ja-en ()
+  (interactive)
+  (custom-set-variables
+   '(google-translate-default-source-language "ja")
+   '(google-translate-default-target-language "en"))
+  (google-translate-query-translate))
+
+  ;;英語から日本語に翻訳を行う
+  (defun google-translate-en-ja ()
+    (interactive)
+    (custom-set-variables
+     '(google-translate-default-source-language "en")
+     '(google-translate-default-target-language "ja"))
+    (google-translate-query-translate))
+
+  ;;キーバインド設定
+  (global-set-key (kbd "C-c j") 'google-translate-ja-en)
+  (global-set-key (kbd "C-c e") 'google-translate-en-ja)
+  (global-set-key (kbd "C-c t") 'google-translate-at-point)
+  (push '("*Google Translate*") popwin:special-display-config))
+
+;;----------------------------------------------------------------
+;; Scala
+;;----------------------------------------------------------------
+;;scala-mode2
+;;(when (require 'scala-mode2)
+;;  (add-to-list 'load-path "~/.emacs.d/elpa/ensime_2.10.0-0.9.8.9/elisp/")
+;;  (when (require 'ensime) (add-hook 'scala-mode-hook 'ensime-scala-mode-hook)))
+
+;;----------------------------------------------------------------
+;; Groovy
+;;----------------------------------------------------------------
+(add-to-list 'load-path (expand-file-name "~/.emacs.d/elpa/Emacs-Groovy-Mode"))
+(when (locate-library "groovy-mode")
+  (autoload 'groovy-mode "groovy-mode" "Major mode for editing Groovy code." t)
+  (add-to-list 'auto-mode-alist '("\.groovy$" . groovy-mode))
+  (add-to-list 'interpreter-mode-alist '("groovy" . groovy-mode)))
+
+;;----------------------------------------------------------------
+;; yasnippet
+;;----------------------------------------------------------------
+(when (locate-library "yasnippet") (require 'yasnippet)
+  (setq yas-snippet-dirs '("~/.emacs.d/snippets"))
+  (yas-global-mode t)
+  (custom-set-variables '(yas-trigger-key "C-;"))
+  (define-key yas-minor-mode-map (kbd "C-c i i") 'yas-insert-snippet)
+  (define-key yas-minor-mode-map (kbd "C-c i n") 'yas-new-snippet)
+  (define-key yas-minor-mode-map (kbd "C-c i v") 'yas-visit-snippet-file)
+
+  (when (locate-library "anything")
+    (eval-after-load "anything-config"
+      '(progn
+	 (defun my-yas/prompt (prompt choices &optional display-fn)
+	   (let* ((names (loop for choice in choices
+			       collect (or (and display-fn (funcall display-fn choice)) choice)))
+
+		  (selected (anything-other-buffer
+			     `(((name . ,(format "%s" prompt))
+				(candidates . names)
+				(action . (("Insert snippet" . (lambda (arg) arg))))))
+			     "*anything yas/prompt*")))
+	     (if selected
+		 (let ((n (position selected names :test 'equal)))
+		   (nth n choices))
+	       (signal 'quit "user quit!"))))
+	 (custom-set-variables '(yas/prompt-functions '(my-yas/prompt)))
+	 (define-key anything-command-map (kbd "y") 'yas/insert-snippet)))))
